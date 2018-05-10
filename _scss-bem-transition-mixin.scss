@@ -1,0 +1,56 @@
+@mixin property-transition(
+    $selectors,
+    $properties,
+    $duration: 0.25s,
+    $easing: ease,
+    $states: ":hover"
+) {
+    $transition-selector: null;
+    $active-selector: null;
+    $transition-property: null;
+
+    @each $selector in $selectors {
+        $transition-selector: $transition-selector, & + $selector;
+
+        @if (str-slice($selector, 0, 5) == ":self") {
+            $transition-selector: &;
+            @each $state in $states {
+                $active-selector: $active-selector, & + $state;
+            }
+        } @else if (str-slice($selector, 0, 1) == ":") {
+            @each $state in $states {
+                $active-selector: $active-selector, & + $state + $selector;
+            }
+        } @else {
+            @each $state in $states {
+                $active-selector: $active-selector, & + $state & + $selector;
+            }
+        }
+    }
+
+    @each $property, $value in $properties {
+        $item-duration: $duration;
+        $item-easing: $easing;
+
+        @if type-of($value) == 'map' {
+            $item-duration: map-get($value, 'duration');
+            $item-easing: map-get($value, 'easing');
+        }
+
+        $transition-property: #{$transition-property, $property $item-duration $item-easing};
+    }
+
+    @at-root #{$transition-selector} {
+        transition: $transition-property;
+    }
+
+    @at-root #{$active-selector} {
+        @each $property, $value in $properties {
+            @if type-of($value) == 'map' {
+                $value: map-get($value, 'value');
+            }
+
+            #{$property}: $value;
+        }
+    }
+}
